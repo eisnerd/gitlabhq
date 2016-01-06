@@ -233,11 +233,13 @@ class HipchatService < Service
     user_name = data[:commit][:author_name]
     status = data[:commit][:status]
     duration = data[:commit][:duration]
+    trace = data[:build_trace]
 
     branch_link = "<a href=\"#{project_url}/commits/#{CGI.escape(ref)}\">#{ref}</a>"
     commit_link = "<a href=\"#{project_url}/commit/#{CGI.escape(sha)}/builds\">#{Commit.truncate_sha(sha)}</a>"
+    summary = trace.split(/\n\s*/).grep(/(^|>)\s*SUMMARY: /).map{|s| s[/(?<=SUMMARY: ).*/]}.compact.join("</br>").gsub(/(https?:\S*)/, '<a href="\1">\1</a>') rescue nil
 
-    "#{project_link}: Commit #{commit_link} of #{branch_link} #{ref_type} by #{user_name} #{humanized_status(status)} in #{duration} second(s)"
+    "#{project_link}: Commit #{commit_link} of #{branch_link} #{ref_type} by #{user_name} #{humanized_status(status)} in #{duration} second(s)#{'</br>' + summary if summary}"
   end
 
   def message_color(data)
