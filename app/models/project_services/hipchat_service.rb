@@ -1,5 +1,6 @@
 class HipchatService < Service
   MAX_COMMITS = 3
+  TRACE_PREFIX = 'SUMMARY: '
 
   prop_accessor :token, :room, :server, :notify, :color, :api_version
   boolean_accessor :notify_only_broken_builds
@@ -237,7 +238,13 @@ class HipchatService < Service
 
     branch_link = "<a href=\"#{project_url}/commits/#{CGI.escape(ref)}\">#{ref}</a>"
     commit_link = "<a href=\"#{project_url}/commit/#{CGI.escape(sha)}/builds\">#{Commit.truncate_sha(sha)}</a>"
-    summary = trace.split(/\n\s*/).grep(/(^|>)\s*SUMMARY: /).map{|s| s[/(?<=SUMMARY: ).*/]}.compact.join("</br>").gsub(/(https?:\S*)/, '<a href="\1">\1</a>') rescue nil
+    # Extract lines starting with `TRACE_PREFIX` from the
+    # build trace, formatting lines and some URLs.
+    summary = trace.
+      split(/\n\s*/).
+      grep(/(^|>)\s*#{TRACE_PREFIX}/).
+      map {|s| s[/(?<=#{TRACE_PREFIX}).*/] }.compact.
+      join("</br>").gsub(/(https?:\S*)/, '<a href="\1">\1</a>') rescue nil
 
     "#{project_link}: Commit #{commit_link} of #{branch_link} #{ref_type} by #{user_name} #{humanized_status(status)} in #{duration} second(s)#{'</br>' + summary if summary}"
   end
